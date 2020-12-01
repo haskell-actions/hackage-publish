@@ -38,18 +38,17 @@ runs:
       run: |
           HACKAGE_AUTH_HEADER="Authorization: X-ApiKey ${{ inputs.hackageToken }}"
 
-
-          if [ "${{ inputs.publish }}" == "true" ];
-            then
-              TARGET_URL="${{ inputs.hackageServer }}/packages/upload";
-              DOCS_URL="${{ inputs.hackageServer }}/package/$PACKAGE_NAME/docs"
-            else
-              TARGET_URL="${{ inputs.hackageServer }}/packages/candidates";
-              DOCS_URL="${{ inputs.hackageServer }}/package/$PACKAGE_NAME/candidate/docs"
-          fi
-
           for PACKAGE_TARBALL in $(find "${{ inputs.packagesPath }}" -maxdepth 1 -name "*.tar.gz"); do
               PACKAGE_NAME=$(basename ${PACKAGE_TARBALL%.*.*})
+              
+              if [ "${{ inputs.publish }}" == "true" ];
+                then
+                  TARGET_URL="${{ inputs.hackageServer }}/packages/upload";
+                  DOCS_URL="${{ inputs.hackageServer }}/package/$PACKAGE_NAME/docs"
+                else
+                  TARGET_URL="${{ inputs.hackageServer }}/packages/candidates";
+                  DOCS_URL="${{ inputs.hackageServer }}/package/$PACKAGE_NAME/candidate/docs"
+              fi
 
               HACKAGE_STATUS=$(curl --header "${HACKAGE_AUTH_HEADER}" --silent --head -w %{http_code} -XGET --anyauth ${{ inputs.hackageServer }}/package/${PACKAGE_NAME} -o /dev/null)
 
