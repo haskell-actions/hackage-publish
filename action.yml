@@ -45,12 +45,12 @@ runs:
                 then
                   TARGET_URL="${{ inputs.hackageServer }}/packages/upload";
                   DOCS_URL="${{ inputs.hackageServer }}/package/$PACKAGE_NAME/docs"
+                  HACKAGE_STATUS=$(curl --header "${HACKAGE_AUTH_HEADER}" --silent --head -w %{http_code} -XGET --anyauth ${{ inputs.hackageServer }}/package/${PACKAGE_NAME} -o /dev/null)
                 else
                   TARGET_URL="${{ inputs.hackageServer }}/packages/candidates";
                   DOCS_URL="${{ inputs.hackageServer }}/package/$PACKAGE_NAME/candidate/docs"
+                  HACKAGE_STATUS=404
               fi
-
-              HACKAGE_STATUS=$(curl --header "${HACKAGE_AUTH_HEADER}" --silent --head -w %{http_code} -XGET --anyauth ${{ inputs.hackageServer }}/package/${PACKAGE_NAME} -o /dev/null)
 
               if [ "$HACKAGE_STATUS" = "404" ]; then
                 echo "Uploading ${PACKAGE_NAME} to ${TARGET_URL}"
