@@ -3,7 +3,7 @@ A GitHub action for publishing packages and documentation to Hackage
 
 ## Usage Examples
 
-This step publishes packages and documentation as candidates on Hackage using the specified authentication token
+This step publishes packages and documentation as candidates on Hackage using the specified authentication token.  You can generate an authentication token on [your Hackage account managment page](http://hackage.haskell.org/users/account-management).
 
 ```yaml
 - uses: haskell-actions/hackage-publish@v1
