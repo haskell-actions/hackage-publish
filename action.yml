@@ -15,63 +15,44 @@ inputs:
     description: 'Authentication token for Hackage'
     required: true
 
-  publish:
-    description: 'A flag indicating whether to publish the release on Hackage. Uploads a release candidate if set to false'
+  candidate:
+    description: Whether to upload the package as a candidate
     required: false
-    default: 'false'
+    default: 'true'
 
   packagesPath:
-    description: 'Path that contains packages tarbals'
+    description: 'Path that contains package tarballs'
     required: false
     default: dist-newstyle/sdist/
 
   docsPath:
-    description: 'Path that contains packages documentation tarbals'
+    description: 'Path that contains packages documentation tarballs'
     required: false
     default: ''
 
 runs:
-  using: 'composite'
+  using: composite
   steps:
-
-    - name: Publish packages
+    # reuse built-in FormData when `actions/github-script` uses node 18?
+    # https://github.com/actions/github-script/issues/310
+    # https://nodejs.org/dist/latest-v18.x/docs/api/globals.html#class-formdata
+    -
+      uses: actions/setup-node@v3
+      with: { node-version: 16 }
+    -
+      run: npm install node-fetch
+      working-directory: ${{ github.action_path }}
       shell: bash
-      run: |
-          HACKAGE_AUTH_HEADER="Authorization: X-ApiKey ${{ inputs.hackageToken }}"
+    -
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fetchModule = await import(
+            '${{ github.action_path }}/node_modules/node-fetch/src/index.js'
+          )
+          const { FormData, fileFrom } = fetchModule
 
-          for PACKAGE_TARBALL in $(find "${{ inputs.packagesPath }}" -maxdepth 1 -name "*.tar.gz"); do
-              PACKAGE_NAME=$(basename ${PACKAGE_TARBALL%.*.*})
-              
-              if [ "${{ inputs.publish }}" == "true" ];
-                then
-                  TARGET_URL="${{ inputs.hackageServer }}/packages/upload";
-                  PACKAGE_URL="${{ inputs.hackageServer }}/package/$PACKAGE_NAME"
-                  HACKAGE_STATUS=$(curl --header "${HACKAGE_AUTH_HEADER}" --silent --head -w %{http_code} -XGET --anyauth ${{ inputs.hackageServer }}/package/${PACKAGE_NAME} -o /dev/null)
-                else
-                  TARGET_URL="${{ inputs.hackageServer }}/packages/candidates";
-                  PACKAGE_URL="${{ inputs.hackageServer }}/package/$PACKAGE_NAME/candidate"
-                  HACKAGE_STATUS=404
-              fi
-
-              DOCS_URL="$PACKAGE_URL/docs"
-
-              if [ "$HACKAGE_STATUS" = "404" ]; then
-                echo "Uploading ${PACKAGE_NAME} to ${TARGET_URL}"
-                curl -X POST -f --header "${HACKAGE_AUTH_HEADER}" ${TARGET_URL} -F "package=@$PACKAGE_TARBALL"
-                echo "Uploaded ${PACKAGE_URL}"
-
-                DOC_FILE_NAME="${{ inputs.docsPath }}/${PACKAGE_NAME}-docs.tar.gz"
-                if [ -n "${{ inputs.docsPath }}" ] && [ -f "$DOC_FILE_NAME" ]; then
-                  echo "Uploading documentation for ${PACKAGE_NAME} to ${DOCS_URL}"
-                  curl -X PUT \
-                    -H 'Content-Type: application/x-tar' \
-                    -H 'Content-Encoding: gzip' \
-                    -H "${HACKAGE_AUTH_HEADER}" \
-                    --data-binary "@$DOC_FILE_NAME" \
-                    "$DOCS_URL"
-                fi
-
-              else
-                echo "Package ${PACKAGE_NAME}" already exists on Hackage.
-              fi
-          done
+          // https://github.com/actions/toolkit/issues/1124#issuecomment-1305836110
+          const inputs = ${{ toJSON(inputs) }}
+          const script = require('${{ github.action_path }}/upload-hackage.js')
+          await script({ inputs, core, glob, fetch: fetchModule.default, require, FormData, fileFrom })
