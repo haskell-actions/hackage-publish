@@ -6,7 +6,7 @@ A GitHub action for publishing packages and documentation to Hackage
 This step publishes packages and documentation as candidates on Hackage using the specified authentication token.  You can generate an authentication token on [your Hackage account managment page](http://hackage.haskell.org/users/account-management).
 
 ```yaml
-- uses: haskell-actions/hackage-publish@v1
+- uses: haskell-actions/hackage-publish@v1.1
   with:
     hackageToken: ${{ secrets.HACKAGE_AUTH_TOKEN }}
     packagesPath: ${{ runner.temp }}/packages
@@ -21,7 +21,7 @@ these packages are uploaded without documentation. Missing documentation never r
 To publish to a custom/private Hackage, specify `hackageServer` parameter to the custom/private Hackage server URI
     
 ```yaml
-- uses: haskell-actions/hackage-publish@v1
+- uses: haskell-actions/hackage-publish@v1.1
   with:
     hackageServer: ${{ secrets.HACKAGE_SERVER }}
     hackageToken: ${{ secrets.HACKAGE_AUTH_TOKEN }}
